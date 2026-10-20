@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOXA 主动运维监控系统</title>
+    <!-- Element Plus -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.9.1/dist/index.css">
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <el-container class="app-container">
+            <!-- 侧边栏 -->
+            <el-aside :width="isCollapsed ? '64px' : '220px'" class="app-aside">
+                <div class="logo-area">
+                    <span class="logo-icon">&#9670;</span>
+                    <span v-show="!isCollapsed" class="logo-text">MOXA 运维</span>
+                </div>
+                <el-menu
+                    :default-active="currentPage"
+                    :collapse="isCollapsed"
+                    background-color="#1d1e3c"
+                    text-color="#a0a4c8"
+                    active-text-color="#409EFF"
+                    @select="handleMenuSelect"
+                >
+                    <el-menu-item index="dashboard">
+                        <el-icon><i class="icon-dashboard"></i></el-icon>
+                        <template #title>系统总览</template>
+                    </el-menu-item>
+                    <el-menu-item index="switches">
+                        <el-icon><i class="icon-switch"></i></el-icon>
+                        <template #title>交换机管理</template>
+                    </el-menu-item>
+                    <el-menu-item index="servers">
+                        <el-icon><i class="icon-server"></i></el-icon>
+                        <template #title>服务器监控</template>
+                    </el-menu-item>
+                    <el-menu-item index="proactive">
+                        <el-icon><i class="icon-proactive"></i></el-icon>
+                        <template #title>主动运维</template>
+                    </el-menu-item>
+                    <el-menu-item index="automation">
+                        <el-icon><i class="icon-config"></i></el-icon>
+                        <template #title>自动化配置</template>
+                    </el-menu-item>
+                    <el-menu-item index="alerts">
+                        <el-icon><i class="icon-alert"></i></el-icon>
+                        <template #title>告警管理</template>
+                        <el-badge v-if="activeAlertCount > 0" :value="activeAlertCount" class="alert-badge" />
+                    </el-menu-item>
+                    <el-menu-item index="inspection">
+                        <el-icon><i class="icon-check"></i></el-icon>
+                        <template #title>设备点检</template>
+                    </el-menu-item>
+                </el-menu>
+            </el-aside>
+
+            <!-- 主内容区 -->
+            <el-container>
+                <!-- 顶部栏 -->
+                <el-header class="app-header">
+                    <div class="header-left">
+                        <el-button text @click="isCollapsed = !isCollapsed">
+                            <span style="font-size:18px">&#9776;</span>
+                        </el-button>
+                        <el-breadcrumb separator="/">
+                            <el-breadcrumb-item>首页</el-breadcrumb-item>
+                            <el-breadcrumb-item>{{ pageTitle }}</el-breadcrumb-item>
+                        </el-breadcrumb>
+                    </div>
+                    <div class="header-right">
+                        <el-tag :type="realtimeStatus === 'open' ? 'success' : 'warning'"
+                                effect="plain" size="small" title="实时推送通道 (SSE)">
+                            {{ realtimeStatus === 'open' ? '● 实时' : '○ 连接中' }}
+                        </el-tag>
+                        <el-tag :type="systemStatus === 'running' ? 'success' : 'danger'" effect="dark" size="small">
+                            {{ systemStatus === 'running' ? '运行中' : '异常' }}
+                        </el-tag>
+                        <span class="header-time">{{ currentTime }}</span>
+                    </div>
+                </el-header>
+
+                <!-- 页面内容 -->
+                <el-main class="app-main">
+                    <!-- 总览页 -->
+                    <dashboard-page v-if="currentPage === 'dashboard'"
+                        @navigate="handleMenuSelect">
+                    </dashboard-page>
+
+                    <!-- 交换机页 -->
+                    <switches-page v-if="currentPage === 'switches'">
+                    </switches-page>
+
+                    <!-- 服务器页 -->
+                    <servers-page v-if="currentPage === 'servers'">
+                    </servers-page>
+
+                    <!-- 主动运维页 -->
+                    <proactive-page v-if="currentPage === 'proactive'">
+                    </proactive-page>
+
+                    <!-- 自动化配置页 -->
+                    <automation-page v-if="currentPage === 'automation'">
+                    </automation-page>
+
+                    <!-- 告警页 -->
+                    <alerts-page v-if="currentPage === 'alerts'">
+                    </alerts-page>
+
+                    <!-- 设备点检页 -->
+                    <inspection-page v-if="currentPage === 'inspection'">
+                    </inspection-page>
+                </el-main>
+            </el-container>
+        </el-container>
+    </div>
+
+    <!-- 依赖库 (CDN) -->
+    <script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/element-plus@2.9.1/dist/index.full.min.js"></script>
+    <script src="https://unpkg.com/element-plus@2.9.1/dist/locale/zh-cn.min.js"></script>
+    <script src="https://unpkg.com/echarts@5.5.1/dist/echarts.min.js"></script>
+    <script src="https://unpkg.com/axios@1.7.7/dist/axios.min.js"></script>
+
+    <!-- 实时推送客户端 (SSE) -->
+    <script src="/js/realtime.js"></script>
+
+    <!-- 应用组件 -->
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/switches.js"></script>
+    <script src="/js/servers.js"></script>
+    <script src="/js/proactive.js"></script>
+    <script src="/js/automation.js"></script>
+    <script src="/js/alerts.js"></script>
+    <script src="/js/inspection.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

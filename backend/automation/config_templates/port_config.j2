@@ -1,0 +1,54 @@
+# MOXA 交换机端口配置模板
+# Jinja2 模板 - 由 vlan_manager.py 渲染为具体命令
+
+{% if action == "set_access" %}
+# 将端口 {{ port_name }} 设为 Access 模式，分配到 VLAN {{ vlan_id }}
+interface {{ port_name }}
+switchport mode access
+switchport access vlan {{ vlan_id }}
+exit
+
+{% elif action == "set_trunk" %}
+# 将端口 {{ port_name }} 设为 Trunk 模式
+interface {{ port_name }}
+switchport mode trunk
+{% if native_vlan is defined %}
+switchport trunk native vlan {{ native_vlan }}
+{% endif %}
+{% if allowed_vlans is defined %}
+switchport trunk allowed vlan {{ allowed_vlans | join(",") }}
+{% endif %}
+exit
+
+{% elif action == "set_hybrid" %}
+# 将端口 {{ port_name }} 设为 Hybrid 模式
+interface {{ port_name }}
+switchport mode hybrid
+{% if pvid is defined %}
+switchport hybrid pvid vlan {{ pvid }}
+{% endif %}
+{% if tagged_vlans is defined %}
+switchport hybrid tagged vlan {{ tagged_vlans | join(",") }}
+{% endif %}
+{% if untagged_vlans is defined %}
+switchport hybrid untagged vlan {{ untagged_vlans | join(",") }}
+{% endif %}
+exit
+
+{% elif action == "enable" %}
+# 启用端口 {{ port_name }}
+interface {{ port_name }}
+no shutdown
+exit
+
+{% elif action == "disable" %}
+# 禁用端口 {{ port_name }}
+interface {{ port_name }}
+shutdown
+exit
+
+{% elif action == "show" %}
+# 查看端口 {{ port_name }} 信息
+show interface {{ port_name }}
+
+{% endif %}

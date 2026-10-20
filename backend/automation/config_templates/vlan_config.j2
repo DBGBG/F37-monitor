@@ -1,0 +1,21 @@
+# MOXA 交换机 VLAN 配置模板
+# Jinja2 模板 - 由 vlan_manager.py 渲染为具体命令
+
+{% if action == "create" %}
+# 创建 VLAN {{ vlan_id }}
+vlan {{ vlan_id }}
+name {{ vlan_name }}
+{% if description %}
+description {{ description }}
+{% endif %}
+exit
+
+{% elif action == "delete" %}
+# 删除 VLAN {{ vlan_id }}
+no vlan {{ vlan_id }}
+
+{% elif action == "list" %}
+# 查看所有 VLAN
+show vlan
+
+{% endif %}
