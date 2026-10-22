@@ -543,18 +543,22 @@ class SNMPCollector:
     async def _run_batches(self, handler, label: str, batch_size: Optional[int] = None) -> dict:
         """按批并行执行 handler(switch), 统计成功/失败
 
-        批次大小默认取配置 batch_size: 一批尽量覆盖全部设备, 让 SNMP 请求充分并行,
-        从而压缩单轮采集时间 (单轮耗时是实时性的决定性因素)。
+        批次大小默认取配置 batch_size: 分批处理, 避免一次性并发过多请求.
+        采集完成后批量推送设备更新事件, 减少 SSE 消息数量.
         """
         switches = await self._enabled_switches()
         if not switches:
             logger.debug("数据库中没有已启用的交换机")
             return {"phase": label, "total": 0, "success": 0, "errors": 0, "duration": 0.0}
         if batch_size is None:
-            batch_size = self.snmp_config.get("batch_size", 128)
+            batch_size = self.snmp_config.get("batch_size", 64)
         total_errors = total_success = 0
         started = time.monotonic()
         logger.info(f"开始批量采集[{label}]: {len(switches)} 台 (每批 {batch_size} 台)")
+        
+        # 收集所有更新的设备ID, 用于批量推送
+        updated_device_ids = []
+        
         for i in range(0, len(switches), batch_size):
             batch = switches[i:i + batch_size]
             results = await asyncio.gather(
@@ -563,8 +567,15 @@ class SNMPCollector:
             errs = sum(1 for r in results if isinstance(r, Exception))
             total_errors += errs
             total_success += len(batch) - errs
+            
+            # 收集成功更新的设备ID
+            for sw, result in zip(batch, results):
+                if not isinstance(result, Exception):
+                    updated_device_ids.append(sw["id"])
+            
             # 短让步, 让事件循环处理 API 请求及其他任务
             await asyncio.sleep(0.05)
+        
         duration = round(time.monotonic() - started, 1)
         stats = {
             "phase": label,
@@ -579,27 +590,52 @@ class SNMPCollector:
             )
         else:
             logger.info(f"批量采集[{label}]完成: 全部 {total_success} 台成功 (耗时 {duration}s)")
+        
+        # 批量推送设备更新事件 (减少 SSE 消息数量)
+        if updated_device_ids and label == "状态":  # 只在状态采集后推送
+            devices_data = [live.switches[did] for did in updated_device_ids if did in live.switches]
+            if devices_data:
+                bus.publish("devices_batch", devices_data)
+        
         return stats
 
     # ---- 三类采集任务, 供调度器按不同频率分别调用 ----
-
+    
     async def poll_all_status(self):
         """端口状态 + 系统信息 (实时性关键: 完成后立即评估告警)"""
         async with self.phase_lock:
-            stats = await self._run_batches(self.poll_switch_status, "状态")
-            await self._after_cycle(stats, alert=True)
-
+            try:
+                stats = await asyncio.wait_for(
+                    self._run_batches(self.poll_switch_status, "状态"),
+                    timeout=120  # 最多120秒
+                )
+                await self._after_cycle(stats, alert=True)
+            except asyncio.TimeoutError:
+                logger.error("端口状态采集任务超时(120s)，跳过本轮")
+    
     async def poll_all_traffic(self):
         """端口流量统计"""
         async with self.phase_lock:
-            stats = await self._run_batches(self.poll_switch_traffic, "流量")
-            await self._after_cycle(stats)
-
+            try:
+                stats = await asyncio.wait_for(
+                    self._run_batches(self.poll_switch_traffic, "流量"),
+                    timeout=180  # 最多180秒
+                )
+                await self._after_cycle(stats)
+            except asyncio.TimeoutError:
+                logger.error("流量采集任务超时(180s)，跳过本轮")
+    
     async def poll_all_hardware(self):
         """硬件健康 温度/电源/告警"""
         async with self.phase_lock:
-            stats = await self._run_batches(self.poll_switch_hardware, "硬件")
-            await self._after_cycle(stats)
+            try:
+                stats = await asyncio.wait_for(
+                    self._run_batches(self.poll_switch_hardware, "硬件"),
+                    timeout=300  # 最多300秒
+                )
+                await self._after_cycle(stats)
+            except asyncio.TimeoutError:
+                logger.error("硬件采集任务超时(300s)，跳过本轮")
 
     async def _after_cycle(self, stats: dict, alert: bool = False):
         """一次采集周期收尾: 更新内存态 -> 推送 -> (可选)立即评估告警"""
@@ -681,7 +717,8 @@ class SNMPCollector:
             if ports:
                 fields["total_ports"] = len(ports)
             live.update_switch(switch_id, **fields)
-            bus.publish("device", live.switches[switch_id])
+            # 不再单独推送设备事件, 改为在 _run_batches 中批量推送
+            # bus.publish("device", live.switches[switch_id])
             logger.debug(f"采集完成[状态]: {ip} - {len(ports)} 物理端口")
         except Exception as e:
             logger.error(f"采集异常[状态] [{ip}]: {e}", exc_info=True)
@@ -731,4 +768,5 @@ class SNMPCollector:
                 )
                 await session.commit()
         live.update_switch(switch_id, is_online=False, last_poll_time=now.strftime("%Y-%m-%d %H:%M:%S"))
-        bus.publish("device", live.switches[switch_id])
+        # 不再单独推送设备事件, 改为在 _run_batches 中批量推送
+        # bus.publish("device", live.switches[switch_id])

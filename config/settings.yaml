@@ -22,12 +22,12 @@ snmp:
   timeout: 2                  # 单次请求超时 (秒), 设备 RTT 约 0.1s, 2s 足够
   retries: 3                  # 重试次数 (丢包时最多重传 3 次, 保证高并发下不丢数据)
   bulk_size: 50               # GETBULK 每个 PDU 最大行数 (越大往返越少)
-  max_concurrent: 128         # 单次 SNMP 请求最大并发数 (提升以压缩单轮采集时延)
-  batch_size: 128             # 每批设备数 (一批覆盖全部设备, 请求充分并行)
+  max_concurrent: 32          # 单次 SNMP 请求最大并发数 (降低以减少线程开销, 32已足够覆盖107台设备)
+  batch_size: 64              # 每批设备数 (分批处理, 避免一次性并发过多请求)
   poll_intervals:
-    port_status: 60            # 端口状态采集间隔 (秒) - 全量一轮约 10~35s
-    traffic_stats: 120         # 流量统计采集间隔 (秒) - 全量约 10~35s
-    hardware_health: 300       # 硬件健康采集间隔 (秒) - 全量约 1s
+    port_status: 120           # 端口状态采集间隔 (秒) - 从60s降至120s, 减轻设备负担
+    traffic_stats: 300         # 流量统计采集间隔 (秒) - 从120s降至300s, 流量趋势无需高频
+    hardware_health: 600       # 硬件健康采集间隔 (秒) - 从300s降至600s, 温度变化缓慢
 
 # SNMPv3 认证 (可选)
 snmp_v3:
@@ -108,7 +108,7 @@ alerts:
 # 理念: 不依赖固定阈值, 而是学习每台设备自身的"正常基线", 在劣化早期发现偏离
 proactive:
   enabled: true
-  analyze_interval: 180          # 主动分析间隔 (秒) - 需大于最慢的采集间隔(硬件 300s 时建议 300+)
+  analyze_interval: 300          # 主动分析间隔 (秒) - 从180s增至300s, 与采集频率匹配
   ewma_alpha: 0.15               # EWMA 平滑系数 (0~1, 越小基线越平稳, 对小波动越不敏感)
   min_samples: 20                # 建立基线所需的最少样本数 (样本不足不判定异常, 避免误报)
   anomaly_k: 4.0                 # z 分数阈值: 偏离基线超过 k 个标准差才判为异常

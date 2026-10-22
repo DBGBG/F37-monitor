@@ -111,10 +111,10 @@ class TaskScheduler:
             coalesce=True,
         )
 
-        # 5. 定期设备发现 (每 5 分钟重新扫描，发现新上线的设备)
+        # 5. 定期设备发现 (每 30 分钟重新扫描，发现新上线的设备)
         self.scheduler.add_job(
             self._rediscover_devices,
-            trigger=IntervalTrigger(minutes=5),
+            trigger=IntervalTrigger(minutes=30),
             id="device_rediscovery",
             name="设备重新发现",
             max_instances=1,
