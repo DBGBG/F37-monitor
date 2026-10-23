@@ -1,0 +1,430 @@
+/* 主动运维系统 - 全局样式 (自迁移前 frontend/css/style.css 平移, 新增登录页与布局段) */
+
+:root {
+    --sidebar-bg: #1d1e3c;
+    --sidebar-width: 220px;
+    --sidebar-collapsed: 64px;
+    --header-height: 56px;
+    --primary-color: #409EFF;
+    --success-color: #67C23A;
+    --warning-color: #E6A23C;
+    --danger-color: #F56C6C;
+    --info-color: #909399;
+    --bg-color: #f0f2f5;
+    --card-bg: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg-color);
+    color: #333;
+    overflow: hidden;
+}
+
+/* 容器 */
+.app-container {
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 侧边栏 */
+.app-aside {
+    background: var(--sidebar-bg);
+    transition: width 0.3s ease;
+    overflow-x: hidden;
+}
+
+.logo-area {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logo-icon {
+    font-size: 24px;
+    color: var(--primary-color);
+}
+
+.logo-text {
+    white-space: nowrap;
+}
+
+.el-menu {
+    border-right: none !important;
+}
+
+/* 顶部栏 */
+.app-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-bg);
+    border-bottom: 1px solid #e8e8e8;
+    padding: 0 20px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-time {
+    color: #666;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+
+/* 主内容区 */
+.app-main {
+    background: var(--bg-color);
+    overflow-y: auto;
+    height: calc(100vh - var(--header-height));
+    padding: 16px;
+}
+
+/* 统计卡片 */
+.stat-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.2;
+}
+
+.stat-card .stat-label {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+}
+
+.stat-card .stat-icon {
+    font-size: 40px;
+    opacity: 0.15;
+    position: absolute;
+    right: 20px;
+    top: 20px;
+}
+
+.stat-card.success .stat-value { color: var(--success-color); }
+.stat-card.warning .stat-value { color: var(--warning-color); }
+.stat-card.danger .stat-value { color: var(--danger-color); }
+.stat-card.primary .stat-value { color: var(--primary-color); }
+
+/* 图表容器 */
+.chart-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.chart-card .chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.chart-container {
+    width: 100%;
+    height: 320px;
+}
+
+/* 表格样式 */
+.data-table {
+    width: 100%;
+}
+
+/* 状态标签 */
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-dot.online { background: var(--success-color); }
+.status-dot.offline { background: var(--danger-color); }
+
+/* 端口状态矩阵 */
+.port-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 6px;
+}
+
+.port-cell {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.port-cell:hover {
+    transform: scale(1.1);
+}
+
+.port-cell.up {
+    background: #e6f7e6;
+    color: var(--success-color);
+    border: 1px solid #b7eb8f;
+}
+
+.port-cell.down {
+    background: #fff1f0;
+    color: var(--danger-color);
+    border: 1px solid #ffa39e;
+}
+
+.port-cell.disabled {
+    background: #f5f5f5;
+    color: #ccc;
+    border: 1px solid #d9d9d9;
+}
+
+/* 搜索栏 */
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+/* 告警徽章 */
+.alert-badge {
+    position: absolute;
+    right: 12px;
+    top: 8px;
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .stat-card .stat-value {
+        font-size: 24px;
+    }
+    .chart-container {
+        height: 260px;
+    }
+}
+
+/* 进度条样式 */
+.usage-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: #f0f0f0;
+    overflow: hidden;
+}
+
+.usage-bar .usage-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.usage-fill.low { background: var(--success-color); }
+.usage-fill.medium { background: var(--warning-color); }
+.usage-fill.high { background: var(--danger-color); }
+
+/* 页面标题 */
+.page-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1a1a2e;
+}
+
+/* 工具栏 */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* 主动运维 - 健康等级分布 */
+.grade-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 12px 4px;
+}
+
+.grade-cell {
+    border-radius: 10px;
+    padding: 20px 8px;
+    text-align: center;
+    color: #fff;
+}
+
+.grade-cell .grade-count { font-size: 30px; font-weight: 700; line-height: 1.1; }
+.grade-cell .grade-name { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+.grade-cell.g-you { background: linear-gradient(135deg, #67C23A, #85ce61); }
+.grade-cell.g-liang { background: linear-gradient(135deg, #409EFF, #66b1ff); }
+.grade-cell.g-zhong { background: linear-gradient(135deg, #E6A23C, #ebb563); }
+.grade-cell.g-cha { background: linear-gradient(135deg, #F56C6C, #f78989); }
+
+/* 主动运维 - 预防建议卡片 */
+.rec-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-left: 4px solid var(--info-color);
+    height: 100%;
+}
+.rec-card.high { border-left-color: var(--danger-color); }
+.rec-card.medium { border-left-color: var(--warning-color); }
+.rec-card.low { border-left-color: var(--info-color); }
+.rec-card .rec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rec-card .rec-device { font-weight: 600; color: #333; }
+.rec-card .rec-action { font-size: 16px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+.rec-card .rec-detail { color: #666; font-size: 13px; margin-bottom: 8px; }
+.rec-card .rec-meta { color: #999; font-size: 12px; }
+
+/* 主动运维 - 详情抽屉 */
+.detail-score { text-align: center; margin-bottom: 16px; }
+.drawer-section-title {
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 16px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+}
+.factor-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px dashed #f0f0f0;
+}
+
+/* 回显 / 命令输出块 (自动化下发结果, 审计明细) */
+.output-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    max-height: 360px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* 登录页 */
+.login-page {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1d1e3c 0%, #2b2d55 55%, #3a3f7a 100%);
+}
+
+.login-card {
+    width: 380px;
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 12px;
+    padding: 32px 28px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.login-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.login-subtitle {
+    font-size: 13px;
+    color: #909399;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.login-footer {
+    margin-top: 16px;
+    font-size: 12px;
+    color: #a0a4c8;
+    text-align: center;
+    line-height: 1.8;
+}
+
+/* 表格内的小间距 */
+.cell-gap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.text-muted { color: #909399; }
+.text-danger { color: var(--danger-color); }
+
+/* 工具栏左侧的说明文字 (也用作统计卡下方的补充说明) */
+.stat-label {
+    font-size: 13px;
+    color: #909399;
+    line-height: 1.6;
+}

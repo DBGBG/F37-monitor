@@ -1,0 +1,106 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  # 采集层与业务层同机部署, 只监听本机时也允许外部访问 (工业现场浏览器需要)
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: moxa-server
+  datasource:
+    # 与采集层 config/collector.yaml 同一实例; 默认值已写死为现场 MySQL
+    url: jdbc:mysql://${OPS_MYSQL_HOST:10.51.190.70}:${OPS_MYSQL_PORT:3306}/${OPS_MYSQL_DB:monitor}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&connectTimeout=5000&socketTimeout=60000
+    username: ${OPS_MYSQL_USER:test}
+    password: ${OPS_MYSQL_PASSWORD:1234}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 10000
+      max-lifetime: 1800000
+      # 现场 MySQL 在远端 (10.51.190.70), 链路抖动会留下"看起来能用其实已断"的空闲连接,
+      # 取到这种连接就会卡到 connection-timeout 才失败 (接口偶发 >5s 与瞬时 500).
+      # 每 30s 对空闲连接探活一次, 坏连接直接剔除重建; 配合 url 上的 socketTimeout
+      # 让半死连接最多阻塞 60s, 不会长期占住池里的连接
+      keepalive-time: 30000
+      validation-timeout: 5000
+  jpa:
+    # 表结构由 Flyway 迁移脚本负责, JPA 不参与建表
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Shanghai
+        format_sql: false
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    # 若建表已由 tools/apply_flyway_sql.py 手工执行 (表已存在但 flyway_schema_history 为空),
+    # 以 V2 为基线, 避免 V2 种子数据重复插入; 空库启动时仍会正常跑 V1+V2
+    baseline-version: 2
+    validate-on-migrate: true
+  jackson:
+    # 响应体一律 snake_case, 与迁移前的 Python 接口字段名逐一对齐
+    property-naming-strategy: SNAKE_CASE
+    # 保留 null 字段, 与迁移前的 Python 响应形状一致 (前端按 key 存在取数)
+    default-property-inclusion: always
+    time-zone: Asia/Shanghai
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  mail:
+    host: ${OPS_MAIL_HOST:smtp.example.com}
+    port: ${OPS_MAIL_PORT:465}
+    username: ${OPS_MAIL_USER:}
+    password: ${OPS_MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            fallback: false
+  task:
+    scheduling:
+      pool:
+        # 快照轮询(2s) / 告警引擎(30s) / 点检生成(60s) / 主动分析(300s) / 保留清理(每日) / 采集监控
+        size: 6
+      thread-name-prefix: ops-sched-
+
+moxa:
+  security:
+    # 生产环境请用环境变量覆盖: openssl rand -base64 32
+    jwt-secret: ${OPS_JWT_SECRET:5a3f0b7e91c2d84a6b5f7e9d3c1a8b6e4f2d0c9a8b7e6d5c4b3a291807f6e5d4}
+    jwt-expire-minutes: ${OPS_JWT_EXPIRE_MINUTES:720}
+    issuer: moxa-server
+  ssh:
+    timeout-seconds: 30
+    connect-timeout-ms: 10000
+    max-concurrent: 5
+  alert:
+    # 采集心跳超过该秒数视为采集层离线 (前端实时标签变灰)
+    collector-dead-seconds: 180
+  cors:
+    # 开发模式下 Vite 前端端口
+    allowed-origins: "http://localhost:5173,http://127.0.0.1:5173"
+
+logging:
+  level:
+    root: INFO
+    com.moxa.monitor: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%level] %logger{25}: %msg%n"
+  file:
+    name: ../logs/server.log

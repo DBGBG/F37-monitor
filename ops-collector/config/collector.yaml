@@ -1,0 +1,87 @@
+# 主动运维系统 - 采集层配置 (collector.yaml)
+# 采集层只负责: SNMP/服务器/进程采集 + Trap 接收 + 写库, 不对外提供 HTTP 服务。
+# 业务参数 (告警规则/基线/通知/保留策略/VLAN 规划) 已迁到 MySQL 的 sys_config 表,
+# 由 Spring Boot 业务层读写; 设备清单与扫描范围来自 discovery_groups / *_devices 表。
+
+# MySQL 连接 (与业务层同一实例)
+# 密码等敏感项建议用环境变量覆盖:
+#   OPS_MYSQL_HOST / OPS_MYSQL_PORT / OPS_MYSQL_USER / OPS_MYSQL_PASSWORD / OPS_MYSQL_DB
+mysql:
+  host: "10.51.190.70"
+  port: 3306
+  user: "test"
+  password: "1234"
+  database: "monitor"
+  pool_size: 10
+  pool_recycle: 1800
+  echo: false
+
+# SNMP 采集配置
+snmp:
+  version: "v2c"              # SNMP 版本: v1, v2c, v3
+  community: "public"         # 默认团体名 (设备行 snmp_config 优先)
+  port: 161
+  timeout: 2                  # 单次请求超时 (秒)
+  retries: 1                  # 重试次数 (不可达设备快速失败, 避免超时风暴)
+  bulk_size: 50               # GETBULK 每个 PDU 最大行数
+  # 并发上限按现场实测取值: 工业交换机的 bulkwalk 很慢, 64 台并发时只有 2 台能取到
+  # 端口数据 (其余全部 2s 超时), 12 台并发成功率约 30%, 8 台并发接近 100%.
+  # 该值同时是 SNMP 工作线程池大小, 调高只会放大超时, 不会提高吞吐.
+  # 设备数或网段变化后用 python tools\snmp_concurrency_probe.py --levels 6,12,32 复测再调.
+  max_concurrent: 8           # 单次 SNMP 请求最大并发数
+  batch_size: 16              # 每批设备数 (配合 max_concurrent, 批内并行/批间让步)
+  discovery_interval_minutes: 30   # 设备发现基准周期 (无存活设备时自动加倍至 240 分钟)
+  offline_backoff:                 # 离线设备轻量探活
+    enabled: true
+    probe_after: 300               # 离线超过该秒数先探活, 失败则跳过完整采集
+  poll_intervals:                  # 兜底周期 (collector_jobs 表为准, 表为空时用这里的值)
+    # 与 V4__retune_collector_jobs.sql 一致: 8 路并发下实测单轮耗时
+    # 状态~215s / 流量~268s / 硬件~120s, 三类共用 phase_lock,
+    # 周期之和必须留余量, 否则任务会被 max_instances=1 合并、实际间隔一路漂移.
+    port_status: 600
+    traffic_stats: 900
+    hardware_health: 1800
+
+# SNMPv3 认证 (可选)
+snmp_v3:
+  auth_protocol: "SHA"
+  auth_key: ""
+  priv_protocol: "AES"
+  priv_key: ""
+
+# SNMP Trap 接收: 设备主动上报 -> 按源 IP 定向重采一次
+# 需在各交换机 (MOXA / H3C 等多品牌) 上把 Trap 目的地址配置为本机 IP
+snmp_trap:
+  enabled: true
+  port: 162
+  min_interval: 5             # 同一设备最小刷新间隔 (秒), 防止 Trap 风暴
+
+# 服务器采集配置
+server_monitor:
+  poll_interval: 30           # 指标采集兜底周期 (秒), 以 collector_jobs 为准
+  ssh_port: 22
+  agent_port: 9100            # 轻量 Agent 监听端口
+  wmi_timeout: 10
+  fail_backoff:
+    threshold: 3              # 连续失败达到该次数后进入冷却
+    cooldown: 300
+
+# 进程监控配置
+process_monitor:
+  poll_interval: 60
+  fail_backoff:
+    threshold: 3
+    cooldown: 300
+  default_processes:          # 服务器 processes_config 为空时的兜底监控项
+    - name: "nginx"
+      port: 80
+    - name: "mysqld"
+      port: 3306
+
+# 采集调度
+scheduler:
+  job_reload_seconds: 300     # collector_jobs 热加载周期 (秒)
+  command_poll_seconds: 10    # collector_commands 指令轮询周期 (秒)
+  heartbeat_retention_days: 7 # 心跳记录保留天数
+
+log_level: "INFO"

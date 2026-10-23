@@ -1,0 +1,26 @@
+# 主动运维系统 - 采集层 Python 依赖
+# 三层架构: 本层只做 SNMP/服务器/进程采集 + 写 MySQL + Trap 接收, 不提供 HTTP 服务
+# (FastAPI / uvicorn / netmiko / jinja2 等Web与SSH下发依赖已随业务逻辑迁至 Spring Boot)
+
+# 数据库 (MySQL 异步驱动)
+sqlalchemy>=2.0.35
+aiomysql>=0.2.0
+cryptography>=43.0.0          # MySQL 8 caching_sha2_password 认证需要
+
+# SNMP 采集 (运行时代码使用 puresnmp)
+puresnmp>=2.0.1
+pyasn1>=0.6.1
+
+# 服务器/进程采集 (SSH 与本地探活)
+paramiko>=3.5.0
+psutil>=6.0.0
+wmi>=1.5.1; sys_platform == "win32"
+
+# 任务调度
+apscheduler>=3.10.4
+
+# 配置解析
+pyyaml>=6.0.2
+
+# HTTP 客户端 (采集轻量 Agent 的 /metrics)
+httpx>=0.27.2

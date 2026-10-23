@@ -1,4 +1,4 @@
-# Python
+# ===== Python 采集层 =====
 __pycache__/
 *.py[cod]
 *$py.class
@@ -13,42 +13,72 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
-parts/
 sdist/
-var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 
-# Database
+# ===== Java 业务层 (Maven 编译产物) =====
+target/
+*.jar
+*.war
+*.class
+.mvn/timing.properties
+
+# ===== Vue 展示层 (依赖与构建产物) =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vite/
+*.tsbuildinfo
+
+# ===== 运行数据 / 数据库文件 =====
+data/
 *.db
 *.db-shm
 *.db-wal
-data/*.db
-data/*.db-shm
-data/*.db-wal
+*.sqlite
+*.sqlite3
 
-# Logs
+# ===== 日志 =====
 logs/
 *.log
+*.log.*
+*.out
+nohup.out
 
-# IDE
+# ===== 调试与临时文件 =====
+_diag_*.py
+_*.ps1
+_*_stage*
+*.tmp
+*.bak
+*.orig
+*.rej
+*.pid
+*.seed.pid
+_probe/
+
+# ===== 验收截图 (调试产物, 不入库) =====
+docs/*.png
+docs/_tmp_*
+
+# ===== IDE =====
 .vscode/
 .idea/
+*.iml
 *.swp
 *.swo
 *~
 
-# OS
+# ===== 操作系统 =====
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Environment variables
+# ===== 环境变量与密钥 =====
 .env
 .env.local
-
-# Diagnostics
-_diag_*.py
+*.pem

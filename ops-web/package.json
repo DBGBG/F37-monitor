@@ -1,0 +1,25 @@
+{
+  "name": "moxa-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "主动运维系统 (Proactive Operations & Maintenance System) - 展示层 (Vue3 + Vite), 只调用业务层 Spring Boot 接口",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 5174"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.7.7",
+    "echarts": "^5.5.1",
+    "element-plus": "^2.9.1",
+    "pinia": "^2.2.6",
+    "vue": "^3.4.38",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.1.4",
+    "vite": "^5.4.8"
+  }
+}
